@@ -5,42 +5,51 @@ import javax.swing.*;
 import gfx.ImageUtils;
 
 import java.util.Random;
+import java.util.TimerTask;
 
 public class GamePanel extends JPanel implements ActionListener{
 
-	static final Color BLACK 		= new Color(0, 0, 0);
-	static final Color GRAY 		= new Color(174, 174, 174);
-	static final Color LIGHTGRAY 	= new Color(222, 222, 222);
-	static final Color DARKGRAY 	= new Color(80, 80, 80);
-	static final Color RED 			= new Color(255, 0, 0);
-	static final Color BLUE			= new Color(0, 0, 240);
+//#####################################################################
+// Game Settings
+//#####################################################################
+	
+	// Define some RGB
+	static final Color BLACK 	= new Color(0, 0, 0);
+	static final Color GRAY 	= new Color(174, 174, 174);
+	static final Color LIGHTGRAY= new Color(222, 222, 222);
+	static final Color DARKGRAY = new Color(80, 80, 80);
+	static final Color RED 		= new Color(255, 0, 0);
+	static final Color BLUE		= new Color(0, 0, 240);
 
-
+	// Map Stuff
 	static final int WIDTH		= 1000;
 	static final int HEIGHT 	= 700;
 	static final int TILESIZE	= 25;
 	static final int MAP_WIDTH	= 37; 	// # of tiles along the x axis
 	static final int MAP_HEIGHT	= 25;	// # of tiles along the y axis
+	static final int NUMBER_OF_MAPTILES	= (MAP_WIDTH * MAP_HEIGHT);
+	Tile[][] map;
 
+	// Booleans of Game
 	static final boolean drawgrid = true;
 	static final boolean showTroopCount = true;
-	boolean doDebug = false;
+	boolean doDebug = true;
+	boolean running = false; 		// game starts as off
 
-
-	static final int NUMBER_OF_MAPTILES	= (MAP_WIDTH * MAP_HEIGHT);
-	static final int DELAY		= 60;	// the higher this number, the slower the game
-	boolean running = false; 			// game starts as off
-	double timePassed = 0;
-	long currentTime;
-	long lastUpdate;
-	double updateRate = 0.001; // updates per second 
-	Tile[][] map;
+	// Update and Time Control
+	double currentTime = System.currentTimeMillis();
+	double accumulator = 0.0;
+	static final int TDELAY = 60;	// Event firing delay
+	static final int DELAY = 2000;	// Tile-Update tick
 	Timer timer;
+	
+	// Extra Utilities
 	Random random;
+	String path = "./";
 
-	String path = "C:\\Users\\jlamm\\eclipse-workspace\\Generals\\";
-	Image mountain = ImageUtils.loadImage(path + "mountain.png");
-
+	// Images : TODO Setup sprite sheet
+	Image mountain;
+	
 
 	// Tile Spread statistics    TODO: Player should be able to adjust these during game creation menu
 	int totalObstacles 	= (int)(NUMBER_OF_MAPTILES * 0.2); 
@@ -49,7 +58,7 @@ public class GamePanel extends JPanel implements ActionListener{
 	int numOfSwamps		= totalObstacles - numOfMountains;
 	int totalVillages	= 5;
 
-
+	// Controller variables		TODO This should be handled by whatever handles server
 	private int playerFocusX = -10; // Default player to not be on any specific tile
 	private int playerFocusY = -10;
 	private int playerControlledTroopCount = 0; // Does not control any troops by default
@@ -58,31 +67,31 @@ public class GamePanel extends JPanel implements ActionListener{
 	char direction = ' ';  // set to ' ' for default
 
 
+	
+
+//#####################################################################
+//	Useful Methods
+//#####################################################################
+	/**
+	 *  This generates everything you need for a new game
+	 */
 	GamePanel() {
 		map = new Tile[MAP_WIDTH][MAP_HEIGHT];
 		random = new Random();
 		this.setPreferredSize(new Dimension(WIDTH, HEIGHT));	
 		this.setBackground(DARKGRAY);							
-		this.setFocusable(true);								// Grab Focus
-		this.addKeyListener(new MyKeyAdapter());				// Allows for user input
+		this.setFocusable(true);						// Grab Focus
+		this.addKeyListener(new MyKeyAdapter());		// Allows for user input
 		this.addMouseListener(new MyMouseAdapter());
-
-		newGame();												// Make a Game
+		newGame();										// Make a Game
 	}
 
+	
+	/** This method will generate a new map based on the configured game settings
+	 * 
+	 * @return returns the map for the game
+	 */
 	public Tile[][] generateMap() {
-		/**
-		 * 	Populate the map with empty null tiles, then perform spreading algorithm to disperse extra tiles:
-		 * 	Spreading method operates on several constants, we want a percentage of total tiles to be certain
-		 * 	types. We also need the player spawn location to be determined, as well as any enemy spawn tiles. 
-		 * 	See [Tile Spread Statistics] to modify
-		 * 
-		 * 		Rules:
-		 * 			1) If > 4 immediate neighbors are an obstacle, delete current mountain
-		 * 			2) If < 2 immediate neighbors is a obstacle, make a mountain
-		 * 			3) If > 3 immediate neighbors is a obstacle, do not place player/entity spawn, find a new spot
-		 */
-
 		// Step 1: Populate the map with empty tiles
 		for (int i = 0; i < MAP_WIDTH; i++) {
 			for (int j = 0; j < MAP_HEIGHT; j++) {
@@ -91,11 +100,11 @@ public class GamePanel extends JPanel implements ActionListener{
 
 				// If the tile is at an edge, make it an obstacle
 				if (i == 0 || i == MAP_WIDTH - 1 || j == 0 || j == MAP_HEIGHT - 1) 		  { 
-					map[i][j].setTileType(1); 				// 1 = Mountain
+					map[i][j].setTileType(1); 			// 1 = Mountain
 					map[i][j].setBackgroundColor(DARKGRAY);
 					map[i][j].setIcon(mountain);
 				} else { // If it is not an edge, do cellular automata
-					
+
 					// TODO Cellular automata
 					int type = random.nextInt((int)(2));
 					if (type == 10) {
@@ -104,50 +113,54 @@ public class GamePanel extends JPanel implements ActionListener{
 						map[i][j].setIcon(mountain);
 					}
 				}
-
 			}
 		}
-		map[1][1].setTroopCount(40);
+
+
 		map[1][1].setOwnedBy(playerID);
-		map[1][1].setBackgroundColor(BLUE);
-
-		map[10][1].setTroopCount(5);
-		map[10][1].setOwnedBy("bruh");
-		map[10][1].setBackgroundColor(RED);
-
+		map[1][1].setBackgroundColor(playerColor);
+		map[1][1].setTroopCount(1);
 
 		System.out.println("Map Generated");
 		return map;
 	}
 
 
-
+	/**
+	 *  Generate the assets, calls a new map, resets the timer, and loads all players
+	 */
 	public void newGame() {
 		loadAssets();
 		map = generateMap();			// Make a new map
 		running = true; 	
-		timer = new Timer(DELAY, this); // Pass in the desired time delay: "this" is because we are using the ActionListener
+		timer = new Timer(TDELAY, this); // Pass in the desired time delay: "this" is because we are using the ActionListener
 		timer.start(); 					// start the clock
 		System.out.println("New Game has started! Good Luck");
 	}
 
-
+	/**
+	 *  A helper method to initialize images, sprites, etc.
+	 */
 	public void loadAssets() {
-		String imageFileExtension = "/assets/textures/";
+		mountain = ImageUtils.loadImage(path + "mountain.png");
 	}
 
+	/**
+	 *  Paints a pretty picture to the window
+	 */
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		draw(g);
 	}
 
 
-
+	/**
+	 * This method handles which elements of the game that need to be drawn
+	 * 
+	 * @param g : send in the graphics object to draw with
+	 */
 	public void draw(Graphics g) {
-
 		if (running) { //Only draw the game itself if the game is running
-
-
 			//Draw the map
 			for (int i = 0; i < map.length; i++) {
 				for (int j = 0; j < map[i].length; j++) {
@@ -163,16 +176,16 @@ public class GamePanel extends JPanel implements ActionListener{
 						if (map[i][j].getTroopCount() != 0) {
 							g.setColor(BLACK);
 							g.setFont(new Font("Ink Free", Font.BOLD, 11));
-							
-							g.drawString("" + map[i][j].getTroopCount(), 						// Add the "" to fool java 
-									((map[i][j].getX() * TILESIZE) ),	// x coordinate
+
+							g.drawString("" + map[i][j].getTroopCount(),// Add the "" to fool java 
+									((map[i][j].getX() * TILESIZE) + g.getFont().getSize()),	// x coordinate
 									(map[i][j].getY() * TILESIZE) + g.getFont().getSize());	
 						}
 					}
 				}
 			}
 
-			if (drawgrid){//To make things easier to see in this game, we are going to draw a grid
+			if (drawgrid){//To make things easier to see, we are going to draw a grid
 				g.setColor(BLACK);
 				for(int i = 0; i < WIDTH/ TILESIZE; i++) {
 					g.drawLine(i * TILESIZE, 0, i * TILESIZE, HEIGHT);  // Draw vertical lines for every unit^2
@@ -195,21 +208,19 @@ public class GamePanel extends JPanel implements ActionListener{
 			}
 
 		} else { gameOver(g); }
-
 	}
 
 
-	
 
 
 
+	/**
+	 *  All game logic that requires refreshing is called in here
+	 *  This includes any tile updates, collision updates, and printing the debugging
+	 */
 	public void update() {
-
 		checkCollisions();
-		
 		if (doDebug) { debug(); }
-		if (doDebug) { System.out.println("ADDING TROOPS>>>"); }
-		
 		if (true) {
 			for (int i = 0; i < map.length; i++) {
 				for (int j = 0; j < map[i].length; j++) {
@@ -219,11 +230,13 @@ public class GamePanel extends JPanel implements ActionListener{
 				}
 			}
 		}
-		
+
 	}
 
 
-
+	/**
+	 *  Make sure the player cannot escape the map, or enter any obstacles
+	 */
 	public void checkCollisions() {
 		if(playerFocusX != -10 && playerFocusY != -10) { //Only do this if the null condition is not true
 			if (playerFocusX < 0 ) { 
@@ -248,63 +261,37 @@ public class GamePanel extends JPanel implements ActionListener{
 	}
 
 
-
+	/**
+	 *  Change the game to off, display game over menu
+	 * 
+	 * @param g : pass in the graphics object the game is running on
+	 */
 	public void gameOver(Graphics g) {}
 
-	public void run() {
-		if (running) {
-			//checkCollisions();
-			//if (doDebug) { debug(); }
-			currentTime = timer.getDelay();
-			double lastRenderTimeInSeconds = (currentTime - lastUpdate); 
-			timePassed += lastRenderTimeInSeconds;
-			lastUpdate = currentTime;
+	
+	/**
+	 *  This method keeps track of the timer object and ensures the game continues updating 
+	 *  between events
+	 */
+	@Override
+	public void actionPerformed(ActionEvent e) {		
+		double newTime = System.currentTimeMillis();
+		double frameTime = newTime - currentTime;
+		currentTime = newTime;
+		accumulator += frameTime;
 
-			if (timePassed > updateRate) {
+		if (timer.isRunning()) {
+			while(accumulator >= DELAY) {
 				update();
-				timePassed -= updateRate;
-				if (doDebug) { System.out.println("ADDING TROOPS>>>"); }
-				
-				
-				if (true) {
-					for (int i = 0; i < map.length; i++) {
-						for (int j = 0; j < map[i].length; j++) {
-							if(map[i][j].getOwnedBy() != null && map[i][j].getTroopCount() > 0) {
-								map[i][j].setTroopCount(map[i][j].getTroopCount() + 1);
-								if (doDebug) { System.out.println("Adding Troops"); }
-							}
-						}
-					}
-				}
-			} 
+				accumulator -= DELAY;
+			}
 		}
 		repaint();
 	}
 
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		double t = 0.0;
-		double dt = 1.0 / DELAY;
-		
-		double currentTime = System.currentTimeMillis();
-		double accumulator = 0.0;
-		
-		while(running) {
-			double newTime = System.currentTimeMillis();
-			double frameTime = newTime - currentTime;
-			currentTime = newTime;
-			accumulator += frameTime;
-			
-			while(accumulator >= dt) {
-				update();
-				accumulator -= dt;
-				t += dt;
-			}
-			repaint();
-		}
-	}
-
-
+	/**
+	 *  Update the current tile to any troop movements, and move the playerFocus around
+	 */
 	public void move(int x, int y) {
 		// Increment to new Tile now that we have the previous tile all taken care of
 		// If the player is trying to move into a tile that has a mountain or other obstacle, don't let it
@@ -350,6 +337,9 @@ public class GamePanel extends JPanel implements ActionListener{
 	}
 
 
+	/**
+	 *  Reads in key input and calls appropriate actions
+	 */
 	public class MyKeyAdapter extends KeyAdapter{
 		@Override
 		public void keyPressed(KeyEvent e) {
@@ -373,7 +363,9 @@ public class GamePanel extends JPanel implements ActionListener{
 	}
 
 
-
+	/**
+	 *  Allows the player to click on tiles, ensures no troop teleport
+	 */
 	public class MyMouseAdapter extends MouseAdapter {
 		@Override
 		public void mouseClicked(MouseEvent e) {
@@ -386,23 +378,20 @@ public class GamePanel extends JPanel implements ActionListener{
 			} else {
 				playerControlledTroopCount = 0;
 			}
-
-			doDebug = true;
 		}
 	}
 
 
 
-
-
-
+	/**
+	 *  Prints out useful info on game data to help with testing
+	 */
 	public void debug() {
+		System.out.println(">>: Calling Update... :<<");
 		System.out.println("Current Tile owned by:		" + map[playerFocusX][playerFocusY].getOwnedBy());
 		System.out.println("Current Tile Troop Count:	" + map[playerFocusX][playerFocusY].getTroopCount());
 		System.out.println("Current playerControlledTroops: " + playerControlledTroopCount);
 		System.out.println("Current Tile Type:	" + map[playerFocusX][playerFocusY].getTileType());
-		if (doDebug) { System.out.println("Called Update at: " + timer.getDelay()); }
-
 		System.out.println();
 	}
 }
