@@ -9,10 +9,10 @@ import java.util.TimerTask;
 
 public class GamePanel extends JPanel implements ActionListener{
 
-//#####################################################################
-// Game Settings
-//#####################################################################
-	
+	//#####################################################################
+	// Game Settings
+	//#####################################################################
+
 	// Define some RGB
 	static final Color BLACK 	= new Color(0, 0, 0);
 	static final Color GRAY 	= new Color(174, 174, 174);
@@ -33,6 +33,7 @@ public class GamePanel extends JPanel implements ActionListener{
 	// Booleans of Game
 	static final boolean drawgrid = true;
 	static final boolean showTroopCount = true;
+	static final boolean doTroopGen = true;
 	boolean doDebug = true;
 	boolean running = false; 		// game starts as off
 
@@ -40,16 +41,23 @@ public class GamePanel extends JPanel implements ActionListener{
 	double currentTime = System.currentTimeMillis();
 	double accumulator = 0.0;
 	static final int TDELAY = 60;	// Event firing delay
-	static final int DELAY = 2000;	// Tile-Update tick
+	static final int DELAY 	= 1000;	// Tile-Update tick
+	private int tickDelay 	= 4;		// How many updates should we wait to call this update
+	private int currentTick = 0;
 	Timer timer;
-	
+
 	// Extra Utilities
 	Random random;
-	String path = "./";
+	String path = "./src/gfx/";
 
 	// Images : TODO Setup sprite sheet
+	Image capitol;
+	Image city;
+	Image field;
 	Image mountain;
-	
+	Image swamp;
+	Image windmill;
+
 
 	// Tile Spread statistics    TODO: Player should be able to adjust these during game creation menu
 	int totalObstacles 	= (int)(NUMBER_OF_MAPTILES * 0.2); 
@@ -59,19 +67,19 @@ public class GamePanel extends JPanel implements ActionListener{
 	int totalVillages	= 5;
 
 	// Controller variables		TODO This should be handled by whatever handles server
-	private int playerFocusX = -10; // Default player to not be on any specific tile
-	private int playerFocusY = -10;
+	private int playerFocusX = 1; // Default player should be moved to capitol
+	private int playerFocusY = 1;
 	private int playerControlledTroopCount = 0; // Does not control any troops by default
 	private String playerID = "player";
 	private Color playerColor = BLUE;
 	char direction = ' ';  // set to ' ' for default
 
 
-	
 
-//#####################################################################
-//	Useful Methods
-//#####################################################################
+
+	//#####################################################################
+	//	Useful Methods
+	//#####################################################################
 	/**
 	 *  This generates everything you need for a new game
 	 */
@@ -86,7 +94,7 @@ public class GamePanel extends JPanel implements ActionListener{
 		newGame();										// Make a Game
 	}
 
-	
+
 	/** This method will generate a new map based on the configured game settings
 	 * 
 	 * @return returns the map for the game
@@ -106,8 +114,8 @@ public class GamePanel extends JPanel implements ActionListener{
 				} else { // If it is not an edge, do cellular automata
 
 					// TODO Cellular automata
-					int type = random.nextInt((int)(2));
-					if (type == 10) {
+					int type = random.nextInt((int)(5));
+					if (type == 1) {
 						map[i][j].setTileType(1); 				// 1 = Mountain
 						map[i][j].setBackgroundColor(DARKGRAY);
 						map[i][j].setIcon(mountain);
@@ -115,11 +123,11 @@ public class GamePanel extends JPanel implements ActionListener{
 				}
 			}
 		}
-
-
 		map[1][1].setOwnedBy(playerID);
 		map[1][1].setBackgroundColor(playerColor);
 		map[1][1].setTroopCount(1);
+		map[1][1].setTileType(6);
+		map[1][1].setIcon(capitol);
 
 		System.out.println("Map Generated");
 		return map;
@@ -142,7 +150,12 @@ public class GamePanel extends JPanel implements ActionListener{
 	 *  A helper method to initialize images, sprites, etc.
 	 */
 	public void loadAssets() {
-		mountain = ImageUtils.loadImage(path + "mountain.png");
+		capitol = ImageUtils.loadImage(path + "capital.png");
+		city 	= ImageUtils.loadImage(path + "city.png");
+		field 	= ImageUtils.loadImage(path + "field.png");
+		mountain= ImageUtils.loadImage(path + "mountain.png");
+		swamp 	= ImageUtils.loadImage(path + "muk.png");
+		windmill= ImageUtils.loadImage(path + "windmill.png");
 	}
 
 	/**
@@ -221,16 +234,26 @@ public class GamePanel extends JPanel implements ActionListener{
 	public void update() {
 		checkCollisions();
 		if (doDebug) { debug(); }
-		if (true) {
-			for (int i = 0; i < map.length; i++) {
-				for (int j = 0; j < map[i].length; j++) {
-					if(map[i][j].getOwnedBy() != null && map[i][j].getTroopCount() > 0) {
-						map[i][j].setTroopCount(map[i][j].getTroopCount() + 1);
+		currentTick += 1;
+		for (int i = 0; i < map.length; i++) {
+			for (int j = 0; j < map[i].length; j++) {
+				
+				Tile t = map[i][j]; // Grab the current tile
+				
+				// If the tile has an owner and some troops on it, increment
+				if (map[i][j].getOwnedBy() != null && map[i][j].getTroopCount() > 0) {
+					// If its a city, add a troop every time update is called
+					if(map[i][j].getTileType() == 2 || map[i][j].getTileType() == 3) {
+						t.setTroopCount(t.getTroopCount() + 1);
+					}
+					// If its a natural tile with troops on it, add a troop every tickDelay
+					else if (doTroopGen && currentTick >= tickDelay) { 
+						t.setTroopCount(t.getTroopCount() + 1); 
 					}
 				}
 			}
 		}
-
+		if (currentTick >= tickDelay) { currentTick -= tickDelay; }
 	}
 
 
@@ -268,7 +291,7 @@ public class GamePanel extends JPanel implements ActionListener{
 	 */
 	public void gameOver(Graphics g) {}
 
-	
+
 	/**
 	 *  This method keeps track of the timer object and ensures the game continues updating 
 	 *  between events

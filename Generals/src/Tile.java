@@ -4,7 +4,7 @@ import java.awt.Image;
 public class Tile {
 	private int x;
 	private int y;
-	private int tileType = 0; //[0 = Empty : 1 = Mountain : 2 = Capitol]
+	private int tileType = 0; //[0 = Empty : 1 = Mountain : 6 = Capitol : 2 = City : 3 = Swamp]
 	private String ownedBy = "noOne";
 	private int troopCount = 0;
 	private Color backgroundColor = new Color(222, 222, 222);
