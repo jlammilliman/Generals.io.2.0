@@ -1,3 +1,4 @@
+package GamePackage;
 import java.awt.Color;
 import java.awt.Image;
 

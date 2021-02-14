@@ -1,3 +1,4 @@
+package GamePackage;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -19,6 +20,7 @@ public class GamePanel extends JPanel implements ActionListener{
 	static final Color DARKGRAY = new Color(80, 80, 80);
 	static final Color RED 		= new Color(255, 0, 0);
 	static final Color BLUE		= new Color(0, 0, 240);
+	static final Color WHITE	= new Color(255, 255, 255);
 
 	// Map Stuff
 	static final int WIDTH		= 1000;
@@ -125,7 +127,7 @@ public class GamePanel extends JPanel implements ActionListener{
 					if (type == mountainTile) {
 						map[i][j].updateTile(mountainTile, null, DARKGRAY, 0, mountain);
 					} else if ( type == cityTile) {
-						map[i][j].updateTile(cityTile, null, DARKGRAY, 10, city);
+						map[i][j].updateTile(cityTile, "citiedededed", DARKGRAY, 10, city);
 					}
 				}
 			}
@@ -190,8 +192,8 @@ public class GamePanel extends JPanel implements ActionListener{
 					g.drawImage(map[i][j].getIcon(), i * TILESIZE, j * TILESIZE, null);
 					if (showTroopCount) {
 						if (map[i][j].getTroopCount() != 0) {
-							g.setColor(BLACK);
-							g.setFont(new Font("Ink Free", Font.BOLD, 11));
+							g.setColor(WHITE);
+							g.setFont(new Font("Purisu", Font.BOLD, 11));
 
 							g.drawString("" + map[i][j].getTroopCount(),// Add the "" to fool java 
 									((map[i][j].getX() * TILESIZE) + g.getFont().getSize()),	// x coordinate
@@ -244,7 +246,7 @@ public class GamePanel extends JPanel implements ActionListener{
 				Tile t = map[i][j]; // Grab the current tile
 				
 				// If the tile has an owner and some troops on it, increment
-				if (t.getOwnedBy() != null && t.getTroopCount() > 0) {
+				if (t.getOwnedBy() != null && t.getTroopCount() > 0 && t.getOwnedBy() != "citiedededed") {
 					// If its a city, add a troop every time update is called
 					if(t.getTileType() == capitolTile || t.getTileType() == cityTile) {
 						t.setTroopCount(t.getTroopCount() + 1);
