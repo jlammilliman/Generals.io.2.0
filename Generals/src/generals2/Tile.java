@@ -1,8 +1,9 @@
-package GamePackage;
+package generals2;
 import java.awt.Color;
 import java.awt.Image;
+import java.io.Serializable;
 
-public class Tile {
+public class Tile implements Serializable {
 	private int x;
 	private int y;
 	private int tileType = 0; //[0 = Empty : 1 = Mountain : 2 = City : 3 = Swamp : 6 = Capitol]

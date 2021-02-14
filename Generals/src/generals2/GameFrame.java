@@ -1,4 +1,4 @@
-package GamePackage;
+package generals2;
 import javax.swing.JFrame;
 
 public class GameFrame extends JFrame{
