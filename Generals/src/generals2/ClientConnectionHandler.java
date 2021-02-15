@@ -24,17 +24,19 @@ public class ClientConnectionHandler implements Runnable {
 	@Override
 	public void run() {
 		try {
-			// Receive all tile updates here
-			Tile t1 = (Tile) tileIn.readObject();
-			Tile t2 = (Tile) tileIn.readObject();
-			
-			System.out.println("[CLIENT] Received tile updates, updating map...");
-			// Update map here
-			System.out.println("Tile 1 is owned by: " + t1.getOwnedBy());
-			System.out.println("Tile 2 is owned by: " + t2.getOwnedBy());
+			while (true) {
+				// Receive all tile updates here
+				Tile t1 = (Tile) tileIn.readObject();
+				Tile t2 = (Tile) tileIn.readObject();
 
-			
+				System.out.println("[CLIENT] Received tile updates, updating map...");
+				// Update map here
+				System.out.println("Tile 1 is owned by: " + t1.getOwnedBy());
+				System.out.println("Tile 2 is owned by: " + t2.getOwnedBy());
+			}
+
 		} catch (IOException e) {
+			System.err.println("!!! Woops Bad happened !!!");
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			System.err.println("!!! Did not get a tile in ClientConnectionHandler !!!");
@@ -43,6 +45,7 @@ public class ClientConnectionHandler implements Runnable {
 			try {
 				tileIn.close();
 			} catch (IOException e) {
+				System.err.println("!!! Woops Bad happened 2!!!");
 				e.printStackTrace();
 			}
 

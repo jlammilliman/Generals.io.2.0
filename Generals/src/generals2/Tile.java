@@ -1,16 +1,21 @@
 package generals2;
 import java.awt.Color;
 import java.awt.Image;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 public class Tile implements Serializable {
-	private int x;
-	private int y;
-	private int tileType = 0; //[0 = Empty : 1 = Mountain : 2 = City : 3 = Swamp : 6 = Capitol]
+	
+	private static final long serialVersionUID = 748155247821044052L;
+	private transient int x;
+	private transient int y;
+	private transient int tileType = 0; //[0 = Empty : 1 = Mountain : 2 = City : 3 = Swamp : 6 = Capitol]
 	private String ownedBy = "noOne";
-	private int troopCount = 0;
-	private Color backgroundColor = new Color(222, 222, 222);
-	private Image icon = null;	// Null by Default
+	private transient int troopCount = 0;
+	private transient Color backgroundColor = new Color(222, 222, 222);
+	private transient Image icon = null;	// Null by Default
 	
 	
 	Tile(int x, int y){
@@ -39,7 +44,6 @@ public class Tile implements Serializable {
 		this.troopCount = troops;
 		if (icon != null) { this.icon = icon; }
 	}
-	
 	
 //############################################################
 //		Nasty Nasty Getters and Settlers

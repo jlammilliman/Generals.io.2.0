@@ -34,27 +34,20 @@ public class Client {
 		// Do not want a pool of threads, since there is only one connection happening
 		new Thread(serverConn).start();
 
-		// Send mock tile move request to server, see if we get a response
+		// Client sends move requests
 		while (true) {
-			
+
 			//Simulate waiting for player movement updates
 			BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
 			String command = keyboard.readLine();
 			if (command.equals("quit")) { break; }
-			
-			System.out.println("> Sending player move request...");
-			sendID.println(playerID);
-			tileSender.writeObject(t1);
-			tileSender.writeObject(t2);
 
-			System.out.println("Tile 1 is owned by: " + t1.getOwnedBy());
-			System.out.println("Tile 2 is owned by: " + t2.getOwnedBy());
+			System.out.println("[CLIENT] Sending player move request...");
+			tileSender.writeObject(t1); // Tile of origin
+			tileSender.writeObject(t2); // Tile 2 move 2
 		}
 
 		socket.close();
-
-		// For testing purposes
-
 
 	}
 }

@@ -23,26 +23,25 @@ public class ServerClientHandler implements Runnable{
 		in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 		out = new ObjectOutputStream(client.getOutputStream());
 		tileReceiver = new ObjectInputStream(client.getInputStream());
-		
+
 	}
 
 	@Override
 	public void run() {
 		try {
 			while (true) {
-				
+
 				// Process all requests from clients here
-				System.out.println("[SERVER] Receving Move Requests...");
-				String playerID = in.readLine(); // Grab whatever number the player is
+				System.out.println("[SERVER] Listening for Move Requests...");
+				
 				Tile t1 = (Tile) tileReceiver.readObject(); // Read origin tile player is moving from
 				Tile t2 = (Tile) tileReceiver.readObject(); // Read tile player is trying to move to
-				
-				System.out.println("Tile 1 is owned by: " + t1.getOwnedBy());
-				System.out.println("Tile 2 is owned by: " + t2.getOwnedBy());
-				
-				System.out.println("[SERVER] Processing request...");
-				t2.setOwnedBy(playerID);
-				pushTileUpdate(t1, t2);
+
+				if (t1 != null && t2 != null) {	
+					System.out.println("[SERVER] Request received. Processing...");
+					t2.setOwnedBy(t1.getOwnedBy());
+					pushTileUpdate(t1, t2);
+				}
 			}
 		} catch (IOException e) {
 			System.err.println("IO exception in client handler");
@@ -63,6 +62,7 @@ public class ServerClientHandler implements Runnable{
 	// Make sure every client can now see the updated tiles
 	private void pushTileUpdate(Tile tile1, Tile tile2) throws IOException {
 		for (ServerClientHandler c : clients) {
+			System.out.println("[SERVER] Pushing update to all connected clients...");
 			out.writeObject(tile1);
 			out.writeObject(tile2);
 		}

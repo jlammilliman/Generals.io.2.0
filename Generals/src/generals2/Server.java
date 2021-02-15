@@ -20,11 +20,11 @@ public class Server {
 		clients = new ArrayList<>();
 		pool = Executors.newFixedThreadPool(8);
 		ServerSocket listener = new ServerSocket(9090);
-		System.out.println("[SERVER] Waiting for connection...");
 
 		while (true) {
 			System.out.println("[SERVER] Checking for new clients...");
 			Socket client = listener.accept();
+			System.out.println("[SERVER] Connection made.");
 			ServerClientHandler clientThread = new ServerClientHandler(client, clients);
 			clients.add(clientThread);
 			
