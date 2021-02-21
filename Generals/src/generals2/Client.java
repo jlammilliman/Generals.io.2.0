@@ -20,11 +20,12 @@ public class Client {
 
 
 	public static void main(String[] args) throws UnknownHostException, IOException {
-
+		
 		// Connect to the server, and read the information from the server
 		Socket socket = new Socket(IP, PORT);
 
-		serverConn = new ClientConnectionHandler(socket);		
+		serverConn = new ClientConnectionHandler(socket);
+		new GameFrame(); // Create an instance to display the game on the user end
 
 		//ClientSide sending data to server
 		PrintWriter sendID = new PrintWriter(socket.getOutputStream(), true); 
@@ -49,5 +50,10 @@ public class Client {
 
 		socket.close();
 
+	}
+	
+	
+	public int[][] getMap(){
+		return serverConn.getMap();
 	}
 }

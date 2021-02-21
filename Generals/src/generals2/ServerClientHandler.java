@@ -1,6 +1,7 @@
 package generals2;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
@@ -16,19 +17,22 @@ public class ServerClientHandler implements Runnable{
 	ObjectInputStream tileReceiver;
 	ObjectOutputStream out;
 	private ArrayList<ServerClientHandler> clients;
+	private int[][] map;
 
-	public ServerClientHandler(Socket clientSocket, ArrayList<ServerClientHandler> clients) throws IOException {
+	public ServerClientHandler(Socket clientSocket, ArrayList<ServerClientHandler> clients, int[][] map) throws IOException {
 		this.client = clientSocket;
 		this.clients = clients;
 		in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 		out = new ObjectOutputStream(client.getOutputStream());
 		tileReceiver = new ObjectInputStream(client.getInputStream());
-
+		this.map = map;
 	}
 
 	@Override
 	public void run() {
 		try {
+			System.out.println("[SERVER] Sending Map Data...");	
+			sendMapData(client);
 			while (true) {
 
 				// Process all requests from clients here
@@ -67,4 +71,34 @@ public class ServerClientHandler implements Runnable{
 			out.writeObject(tile2);
 		}
 	}
+	
+	
+	private void sendMapData(Socket s) throws IOException {
+		DataOutputStream out = new DataOutputStream(s.getOutputStream());
+		out.writeInt(map.length);		// Send the width
+		out.writeInt(map[0].length);	// Send the height
+		for (int i = 0; i < map.length; i++) {
+			for (int j = 0; j < map[i].length; j++) {
+				out.writeInt(map[i][j]);// Send map index
+			}
+		}
+		
+	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

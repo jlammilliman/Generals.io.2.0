@@ -4,7 +4,7 @@ import javax.swing.JFrame;
 public class GameFrame extends JFrame{
 	
 	GameFrame() {
-		this.add(new GamePanel()); //Shortcut method of adding the game panel to the frame
+		this.add(new GamePanel(new int[0][0])); //Shortcut method of adding the game panel to the frame
 		this.setTitle("Generals");
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setResizable(false);;

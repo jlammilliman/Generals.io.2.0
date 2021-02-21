@@ -1,6 +1,7 @@
 package generals2;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
@@ -11,6 +12,7 @@ public class ClientConnectionHandler implements Runnable {
 	private Socket server;
 	private BufferedReader in;
 	private ObjectInputStream tileIn;
+	private int[][] map;
 
 
 
@@ -24,6 +26,7 @@ public class ClientConnectionHandler implements Runnable {
 	@Override
 	public void run() {
 		try {
+			readMap(server);
 			while (true) {
 				// Receive all tile updates here
 				Tile t1 = (Tile) tileIn.readObject();
@@ -36,7 +39,7 @@ public class ClientConnectionHandler implements Runnable {
 			}
 
 		} catch (IOException e) {
-			System.err.println("!!! Woops Bad happened !!!");
+			System.err.println("!!! Woops Bad happened, IOException in connection handler !!!");
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			System.err.println("!!! Did not get a tile in ClientConnectionHandler !!!");
@@ -45,7 +48,7 @@ public class ClientConnectionHandler implements Runnable {
 			try {
 				tileIn.close();
 			} catch (IOException e) {
-				System.err.println("!!! Woops Bad happened 2!!!");
+				System.err.println("!!! Woops Bad happened trying to close tileIn!!!");
 				e.printStackTrace();
 			}
 
@@ -53,4 +56,20 @@ public class ClientConnectionHandler implements Runnable {
 	}
 
 
+	private void readMap(Socket s) throws IOException {
+		DataInputStream in = new DataInputStream(s.getInputStream());
+		int width = in.readInt();	// Read the width and height from the server
+		int height = in.readInt();	
+		this.map = new int[width][height];
+		for(int i = 0; i < width; i++) {
+			for(int j = 0; j < height; j++) {
+				map[i][j] = in.readInt();	// Get map tile type and save locally in an int[][] map
+			}
+		}
+
+	}
+	
+	public int[][] getMap(){
+		return map;
+	}
 }
